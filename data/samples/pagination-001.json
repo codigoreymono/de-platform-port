@@ -1,0 +1,31 @@
+[
+  {
+    "unique_key": "sample-0001",
+    "created_date": "2026-09-01T00:00:00.000",
+    "agency": "NYPD",
+    "agency_name": "New York City Police Department",
+    "complaint_type": "Noise - Residential",
+    "descriptor": "Loud Music/Party",
+    "borough": "MANHATTAN",
+    "incident_zip": "10001",
+    "status": "Open",
+    "open_data_channel_type": "ONLINE",
+    "resolution_action_updated_date": "2026-09-01T00:00:00.000",
+    ":updated_at": "2026-09-02T04:00:00Z"
+  },
+  {
+    "unique_key": "sample-0002",
+    "created_date": "2026-09-01T08:00:00.000",
+    "closed_date": null,
+    "agency": "DOT",
+    "agency_name": "Department of Transportation",
+    "complaint_type": "Street Condition",
+    "descriptor": null,
+    "borough": "BROOKLYN",
+    "incident_zip": "11201",
+    "status": "In Progress",
+    "open_data_channel_type": "PHONE",
+    "resolution_action_updated_date": "2026-09-01T09:00:00.000",
+    ":updated_at": "2026-09-02T04:00:00Z"
+  }
+]

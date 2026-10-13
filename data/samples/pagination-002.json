@@ -1,0 +1,17 @@
+[
+  {
+    "unique_key": "sample-0003",
+    "created_date": "2026-09-01T23:59:59.000",
+    "closed_date": "2026-10-01T00:00:00.000",
+    "agency": "DOT",
+    "agency_name": "Department of Transportation",
+    "complaint_type": "Street Condition",
+    "descriptor": "Pothole",
+    "borough": "QUEENS",
+    "incident_zip": "11354",
+    "status": "Closed",
+    "open_data_channel_type": "MOBILE",
+    "resolution_action_updated_date": "2026-10-01T00:00:00.000",
+    ":updated_at": "2026-10-02T04:00:00Z"
+  }
+]

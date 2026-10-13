@@ -1,0 +1,17 @@
+[
+  {
+    "unique_key": "sample-0001",
+    "created_date": "2026-09-01T00:00:00.000",
+    "closed_date": "2026-10-02T12:00:00.000",
+    "agency": "NYPD",
+    "agency_name": "New York City Police Department",
+    "complaint_type": "Noise - Residential",
+    "descriptor": "Loud Music/Party",
+    "borough": "MANHATTAN",
+    "incident_zip": "10001",
+    "status": "Closed",
+    "open_data_channel_type": "ONLINE",
+    "resolution_action_updated_date": "2026-10-02T12:00:00.000",
+    ":updated_at": "2026-10-03T04:00:00Z"
+  }
+]

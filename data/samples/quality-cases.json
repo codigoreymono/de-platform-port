@@ -1,0 +1,55 @@
+[
+  {
+    "unique_key": "sample-null-fields",
+    "created_date": "2026-09-01T10:00:00.000",
+    "closed_date": null,
+    "agency": "DOT",
+    "complaint_type": "Street Condition",
+    "descriptor": null,
+    "borough": null,
+    "incident_zip": "00123",
+    "status": "Open",
+    "open_data_channel_type": null
+  },
+  {
+    "unique_key": "sample-unknown-status",
+    "created_date": "2026-09-01T10:00:00.000",
+    "agency": "DOT",
+    "complaint_type": "Synthetic New Category",
+    "borough": "Unspecified",
+    "status": "Synthetic Unmapped Status"
+  },
+  {
+    "unique_key": null,
+    "created_date": "2026-09-01T10:00:00.000",
+    "status": "Open"
+  },
+  {
+    "unique_key": "sample-invalid-date",
+    "created_date": "not-a-date",
+    "status": "Open"
+  },
+  {
+    "unique_key": "sample-negative-duration",
+    "created_date": "2026-09-01T10:00:00.000",
+    "closed_date": "2026-08-31T10:00:00.000",
+    "status": "Closed"
+  },
+  {
+    "unique_key": "sample-wrong-window",
+    "created_date": "2026-09-02T00:00:00.000",
+    "status": "Open"
+  },
+  {
+    "unique_key": "sample-ambiguous-closure",
+    "created_date": "2026-09-01T10:00:00.000",
+    "closed_date": "2026-11-01T01:30:00.000",
+    "status": "Closed"
+  },
+  {
+    "unique_key": "sample-future-closure",
+    "created_date": "2026-09-01T10:00:00.000",
+    "closed_date": "2026-12-01T10:00:00.000",
+    "status": "Closed"
+  }
+]
