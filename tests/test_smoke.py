@@ -1,5 +1,5 @@
-import data_lab
+import nyc311
 
 
 def test_package_import():
-    assert data_lab.__name__ == "data_lab"
+    assert nyc311.__name__ == "nyc311"

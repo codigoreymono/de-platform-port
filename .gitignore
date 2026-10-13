@@ -34,3 +34,30 @@ result-*
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Python tooling
+.coverage
+htmlcov/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Local temporary files
+*.log
+tmp/
+temp/
+
+# Terraform
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local AWS / SAM artifacts
+.aws-sam/
+
+# OS / editors
+.DS_Store
+*.swp
+*.swo

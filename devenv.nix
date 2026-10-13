@@ -1,32 +1,29 @@
+
 { pkgs, ... }:
 
 {
+  # Python runtime
   languages.python = {
     enable = true;
     package = pkgs.python312;
   };
 
+  # Development tools
   packages = with pkgs; [
     uv
     ruff
     duckdb
+
+    # AWS tooling
+    awscli2
+    terraform
+
+    # Utilities
+    jq
   ];
 
+  # Native libraries for Python packages
   env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
     pkgs.stdenv.cc.cc.lib
   ];
-
-  services.postgres = {
-    enable = true;
-    package = pkgs.postgresql_17;
-
-    port = 5433;
-    listen_addresses = "127.0.0.1";
-
-    initialDatabases = [
-      {
-        name = "data_lab";
-      }
-    ];
-  };
 }
