@@ -1,0 +1,24 @@
+schema: spec-driven
+
+context: |
+  Proyecto: NYC 311 Data Platform.
+  Objetivo: Pipeline batch de Ingeniería de Datos para portafolio.
+
+  Desarrollo local:
+  Python, HTTPX, Pandas, PyArrow, DuckDB, Pytest y NixOS.
+
+  Despliegue AWS:
+  S3, Lambda, Step Functions, Glue Catalog, Athena y Terraform.
+
+  Arquitectura:
+  - Bronze, Silver y Gold.
+  - Código modular y reutilizable.
+  - Desarrollo y pruebas locales.
+  - Despliegue manual en AWS.
+  - Priorizar un proyecto completo y funcional.
+
+rules:
+  proposal:
+    - Mantener el alcance pequeño y concreto.
+  design:
+    - Priorizar simplicidad y separación de responsabilidades.
