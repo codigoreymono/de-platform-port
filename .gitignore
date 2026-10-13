@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.*
+!.env.example
+.direnv/
+
+# Data
+data/*
+!data/samples/
+!data/samples/**
+
+# Nix build outputs
+result
+result-*
+
+# devenv
+.devenv/
+
+# Jupyter
+.ipynb_checkpoints/
