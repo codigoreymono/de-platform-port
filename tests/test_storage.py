@@ -54,6 +54,10 @@ def sample_manifests() -> list[Manifest]:
         "source_manifest_key": manifest_key(bronze),
         "partition_key": "silver/created_date=2026-09-01/part.parquet",
         "quality_report_key": "quality/run=fixture-001/2026-09-01.json",
+        "quarantine_key": "quarantine/run=fixture-001/2026-09-01.json.gz",
+        "partition_sha256": "0" * 64,
+        "quality_report_sha256": "0" * 64,
+        "quarantine_sha256": "0" * 64,
         "row_count": 2,
         "schema_version": "1",
         "transformation_version": "1",
@@ -71,6 +75,10 @@ def sample_manifests() -> list[Manifest]:
         "identical_duplicates_discarded": 0,
         "warnings": {"unknown_status": 1},
         "rejection_reasons": {},
+        "source_manifest_key": manifest_key(bronze),
+        "category_counts": {"UNKNOWN": 2},
+        "status_counts": {"UNKNOWN": 2},
+        "duration_exclusions": {"not_closed": 2, "closed_without_valid_duration": 0},
     }
     run: RunManifest = {
         "kind": "run",
@@ -84,6 +92,12 @@ def sample_manifests() -> list[Manifest]:
         "completed_days": ["2026-09-01"],
         "output_keys": [],
         "error": None,
+        "action": "extract",
+        "stage": "bronze",
+        "active_day": None,
+        "bronze_keys": [],
+        "gold_days": [],
+        "gold_manifest_key": None,
     }
     return [bronze, silver, quality, run]
 

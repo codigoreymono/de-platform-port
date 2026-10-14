@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+from collections import Counter
 from pathlib import Path
 
 import httpx
@@ -18,15 +19,24 @@ def sample_rows(name: str) -> list[dict[str, object]]:
 
 def test_fixtures_are_small_and_synthetic() -> None:
     files = sorted(SAMPLES.glob("*.json"))
-    assert len(files) == 5
+    assert len(files) == 6
     assert sum(path.stat().st_size for path in files) < 16_384
     rows = [row for path in files for row in sample_rows(path.name)]
-    assert len(rows) == 15
+    assert len(rows) == 27
     assert all(
         row["unique_key"] is None or row["unique_key"].startswith("sample-")
         for row in rows
     )
     assert all("incident_address" not in row for row in rows)
+
+
+def test_cli_demo_fixture_contains_representative_channels_and_omissions() -> None:
+    rows = sample_rows("gold-metrics.json")
+    counts = Counter(row.get("open_data_channel_type") for row in rows)
+    assert counts == {"ONLINE": 3, "PHONE": 3, "MOBILE": 3, None: 3}
+    assert {
+        row["unique_key"] for row in rows if "open_data_channel_type" not in row
+    } == {"sample-gold-03", "sample-gold-07", "sample-gold-11"}
 
 
 def test_pagination_fixture_layout() -> None:

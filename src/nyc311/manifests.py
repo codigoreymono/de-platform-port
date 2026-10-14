@@ -47,10 +47,15 @@ class SilverManifest(TypedDict):
     source_manifest_key: str
     partition_key: str
     quality_report_key: str
+    quarantine_key: str
+    partition_sha256: str
+    quality_report_sha256: str
+    quarantine_sha256: str
     row_count: int
     schema_version: str
     transformation_version: str
     status: CompletionStatus
+    error: NotRequired[str]
 
 
 class QualityReport(TypedDict):
@@ -65,6 +70,45 @@ class QualityReport(TypedDict):
     identical_duplicates_discarded: int
     warnings: dict[str, int]
     rejection_reasons: dict[str, int]
+    source_manifest_key: str
+    category_counts: dict[str, int]
+    status_counts: dict[str, int]
+    duration_exclusions: dict[str, int]
+
+
+class QuarantineRecord(TypedDict):
+    source_run_id: str
+    source_page_key: str
+    source_row_number: int
+    original: dict[str, object]
+    reason_codes: list[str]
+
+
+class GoldProduct(TypedDict):
+    key: str
+    row_count: int
+    sha256: str
+    sql_sha256: str
+
+
+class GoldManifest(TypedDict):
+    kind: Literal["gold"]
+    mode: Mode
+    run_id: str
+    start_date: str
+    end_date: str
+    covered_days: list[str]
+    coverage: Literal["sample", "full_month"]
+    generated_at_utc: str
+    transformation_version: str
+    input_partitions: list[SilverManifest]
+    observations_by_day: dict[str, dict[str, str]]
+    observation_min_utc: str
+    observation_max_utc: str
+    quality_exclusions: dict[str, object]
+    products: dict[str, GoldProduct]
+    status: CompletionStatus
+    error: NotRequired[str]
 
 
 class RunManifest(TypedDict):
@@ -79,6 +123,14 @@ class RunManifest(TypedDict):
     completed_days: list[str]
     output_keys: list[str]
     error: str | None
+    action: Literal["extract", "replay"]
+    stage: Literal["bronze", "silver", "gold", "finished"]
+    active_day: str | None
+    bronze_keys: list[str]
+    gold_days: list[str]
+    gold_manifest_key: str | None
 
 
-type Manifest = BronzeManifest | SilverManifest | QualityReport | RunManifest
+type Manifest = (
+    BronzeManifest | SilverManifest | QualityReport | RunManifest | GoldManifest
+)

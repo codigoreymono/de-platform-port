@@ -2,10 +2,12 @@
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from datetime import date, timedelta
 from math import isfinite
 from pathlib import Path, PurePosixPath
+from tempfile import NamedTemporaryFile
 
 from nyc311.config import Mode, validate_window
 from nyc311.manifests import Manifest
@@ -48,6 +50,8 @@ def manifest_key(manifest: Manifest) -> str:
     kind = manifest["kind"]
     if kind == "run":
         return f"control/runs/{run_id}.json"
+    if kind == "gold":
+        return f"control/gold/{run_id}.json"
     if end - start != timedelta(days=1):
         raise ValueError("Bronze, Silver, and quality manifests cover one day")
     if kind == "bronze":
@@ -74,7 +78,33 @@ def write_json(root: Path, key: str, value: Mapping[str, object]) -> None:
     write_bytes(root, key, content.encode("utf-8"))
 
 
-def read_json(root: Path, key: str) -> dict[str, object]:
+@contextmanager
+def temporary_object(root: Path, key: str) -> Iterator[Path]:
+    """Stage beside the destination for same-filesystem replacement, not append."""
+    path = object_path(root, key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = None
+    try:
+        with NamedTemporaryFile(
+            dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+        yield temporary_path
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def write_json_atomic(root: Path, key: str, value: Mapping[str, object]) -> None:
+    with temporary_object(root, key) as temporary:
+        write_json(root, temporary.relative_to(root).as_posix(), value)
+        temporary.replace(object_path(root, key))
+
+
+def decode_json(content: bytes) -> dict[str, object]:
     def finite_number(value: str) -> float:
         number = float(value)
         if not isfinite(number):
@@ -90,7 +120,7 @@ def read_json(root: Path, key: str) -> dict[str, object]:
         return result
 
     value = json.loads(
-        read_bytes(root, key),
+        content,
         parse_float=finite_number,
         parse_constant=finite_number,
         object_pairs_hook=unique_object,
@@ -98,3 +128,7 @@ def read_json(root: Path, key: str) -> dict[str, object]:
     if not isinstance(value, dict):
         raise ValueError("Manifest JSON must contain an object")
     return value
+
+
+def read_json(root: Path, key: str) -> dict[str, object]:
+    return decode_json(read_bytes(root, key))
