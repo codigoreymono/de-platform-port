@@ -14,12 +14,11 @@ import pyarrow.parquet as pq
 
 from nyc311.config import COHORT_END, Mode, validate_window
 from nyc311.manifests import SilverManifest
-from nyc311.silver import (
+from nyc311.silver_contract import (
     SCHEMA_VERSION,
     SILVER_SCHEMA,
     TRANSFORMATION_VERSION,
     SilverError,
-    transform_bronze,
 )
 from nyc311.storage import (
     decode_json,
@@ -154,6 +153,8 @@ def publish_silver(
     On failure after invalidation, retry this function with complete saved Bronze.
     It never restores an old completion marker over potentially replaced data.
     """
+    from nyc311.silver import transform_bronze
+
     curated = transform_bronze(base, bronze_key, mode=mode, run_id=run_id)
     report = curated["quality_report"]
     day = date.fromisoformat(report["start_date"])

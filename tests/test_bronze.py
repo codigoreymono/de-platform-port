@@ -211,7 +211,7 @@ def test_offline_replay_preserves_bytes_and_observation_metadata(
     def no_source_calls(*args: object, **kwargs: object) -> None:
         raise AssertionError("Replay must not invoke the source")
 
-    monkeypatch.setattr(bronze, "extract_day", no_source_calls)
+    monkeypatch.setattr(source, "extract_day", no_source_calls)
     monkeypatch.setattr(source, "create_client", no_source_calls)
     monkeypatch.setattr(source, "_request", no_source_calls)
     loaded, result = bronze.load_bronze(tmp_path, manifest_key(manifest))

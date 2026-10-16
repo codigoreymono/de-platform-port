@@ -14,8 +14,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from nyc311.config import COHORT_END, COHORT_START, Mode, daily_windows, validate_window
+from nyc311.lambda_runtime import DUCKDB_LIMITS
 from nyc311.manifests import SilverManifest
-from nyc311.silver import SILVER_SCHEMA, SilverError
+from nyc311.silver_contract import SILVER_SCHEMA, SilverError
 from nyc311.silver_store import load_silver
 from nyc311.storage import object_path, output_root, temporary_object
 
@@ -271,7 +272,11 @@ def _validate_result(source: pa.Table, result: pa.Table, product: Product) -> No
 
 
 def compute_product(
-    table: pa.Table, product: Product, *, sql_directory: Path | None = None
+    table: pa.Table,
+    product: Product,
+    *,
+    sql_directory: Path | None = None,
+    duckdb_config: dict[str, object] | None = None,
 ) -> pa.Table:
     """Execute versioned SQL over verified Silver; packaging can supply its SQL directory."""
     if product not in PRODUCT_SCHEMAS:
@@ -280,18 +285,52 @@ def compute_product(
         raise GoldError("Gold requires the explicit Silver schema")
     directory = DEFAULT_SQL_DIRECTORY if sql_directory is None else sql_directory
     query = (directory / f"{product}.sql").read_text(encoding="utf-8")
+    if duckdb_config is not None:
+        return _compute_query(table, product, query, duckdb_config=duckdb_config)
     return _compute_query(table, product, query)
 
 
-def _compute_query(table: pa.Table, product: Product, query: str) -> pa.Table:
-    """Shared execution path for an individual product or a frozen four-query run."""
+def _compute_query(
+    table: pa.Table,
+    product: Product,
+    query: str,
+    *,
+    duckdb_config: dict[str, object] | None = None,
+) -> pa.Table:
+    """Execute unchanged SQL without spill; overrides may only lower the memory cap."""
     if product not in PRODUCT_SCHEMAS or not table.schema.equals(
         SILVER_SCHEMA, check_metadata=True
     ):
         raise GoldError(
             "Gold requires a supported product and the explicit Silver schema"
         )
-    with duckdb.connect(":memory:") as connection:
+    if duckdb_config is not None:
+        if (
+            not isinstance(duckdb_config, dict)
+            or set(duckdb_config) - DUCKDB_LIMITS.keys()
+        ):
+            raise GoldError("DuckDB configuration may contain only resource settings")
+        for name, value in duckdb_config.items():
+            if name == "threads":
+                valid = type(value) is int and value == DUCKDB_LIMITS[name]
+            elif name == "temp_directory":
+                valid = type(value) is str and value == ""
+            else:
+                match = isinstance(value, str) and re.fullmatch(
+                    r"([1-9][0-9]*)\s*(?:([KMGT])(i?))?B", value, re.IGNORECASE
+                )
+                valid = bool(match) and (
+                    int(match[1])
+                    * (1024 if match[3] else 1000)
+                    ** "BKMGT".index((match[2] or "B").upper())
+                    <= 512 * 1024**2
+                )
+            if not valid:
+                raise GoldError("DuckDB resource setting has an unsafe value")
+    config = dict(DUCKDB_LIMITS)
+    if duckdb_config is not None:
+        config.update(duckdb_config)
+    with duckdb.connect(":memory:", config=config) as connection:
         connection.register("silver", table)
         result = connection.execute(query).to_arrow_table()
     result = result.cast(PRODUCT_SCHEMAS[product], safe=True)
@@ -307,6 +346,7 @@ def prepare_gold_product(
     mode: Mode = "sample",
     days: Sequence[date] | None = None,
     sql_directory: Path | None = None,
+    duckdb_config: dict[str, object] | None = None,
 ) -> Path:
     """Write one prepared Parquet, not the four-product publication of task 5.6."""
     if product not in PRODUCT_SCHEMAS:
@@ -321,7 +361,15 @@ def prepare_gold_product(
             "A managed Gold run cannot be changed by individual preparation"
         )
     inputs = load_gold_inputs(base, mode=mode, days=days)
-    result = compute_product(inputs["table"], product, sql_directory=sql_directory)
+    if duckdb_config is None:
+        result = compute_product(inputs["table"], product, sql_directory=sql_directory)
+    else:
+        result = compute_product(
+            inputs["table"],
+            product,
+            sql_directory=sql_directory,
+            duckdb_config=duckdb_config,
+        )
     return _write_prepared_product(root, inputs, product, run_id, result)
 
 

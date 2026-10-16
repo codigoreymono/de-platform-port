@@ -3,7 +3,7 @@
 import json
 import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
@@ -24,7 +24,7 @@ from nyc311.gold import (
     load_gold_inputs,
 )
 from nyc311.manifests import GoldManifest
-from nyc311.silver import SCHEMA_VERSION, TRANSFORMATION_VERSION
+from nyc311.silver_contract import SCHEMA_VERSION, TRANSFORMATION_VERSION
 from nyc311.storage import (
     decode_json,
     manifest_key,
@@ -277,6 +277,8 @@ def publish_gold(
     mode: Mode = "sample",
     days: Sequence[date] | None = None,
     sql_directory: Path | None = None,
+    on_progress: Callable[[GoldManifest], None] | None = None,
+    duckdb_config: dict[str, object] | None = None,
 ) -> GoldManifest:
     """Publish one immutable four-product run; retry failed work with a new run_id."""
     key = _run_key(run_id)
@@ -317,10 +319,17 @@ def publish_gold(
         "status": "incomplete",
     }
     write_json_atomic(root, key, manifest)
+    if on_progress is not None:
+        on_progress(manifest)
     try:
         for name, query in queries.items():
             product = cast(Product, name)
-            result = _compute_query(inputs["table"], product, query)
+            if duckdb_config is None:
+                result = _compute_query(inputs["table"], product, query)
+            else:
+                result = _compute_query(
+                    inputs["table"], product, query, duckdb_config=duckdb_config
+                )
             path = _write_prepared_product(root, inputs, product, run_id, result)
             manifest["products"][product] = {
                 "key": path.relative_to(root).as_posix(),
@@ -329,16 +338,22 @@ def publish_gold(
                 "sql_sha256": sha256(query.encode()).hexdigest(),
             }
             write_json_atomic(root, key, manifest)
+            if on_progress is not None:
+                on_progress(manifest)
         _verify_run(root, manifest)
         manifest["generated_at_utc"] = datetime.now(UTC).isoformat()
         manifest["status"] = "complete"
         write_json_atomic(root, key, manifest)
+        if on_progress is not None:
+            on_progress(manifest)
     except Exception as error:
         manifest["status"] = "failed"
         manifest["error"] = type(error).__name__
         try:
             write_json_atomic(root, key, manifest)
-        except OSError:
+            if on_progress is not None:
+                on_progress(manifest)
+        except Exception:
             pass
         raise
     return manifest

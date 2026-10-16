@@ -47,7 +47,11 @@ tmp/
 temp/
 
 # Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
 *.tfvars
+!*.tfvars.example
 *.tfvars.json
 override.tf
 override.tf.json

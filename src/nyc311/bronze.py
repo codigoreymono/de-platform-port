@@ -1,16 +1,17 @@
 """Local Bronze pages and extraction manifests, without Silver processing."""
 
+from __future__ import annotations
+
 import gzip
 import json
 import zlib
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from hashlib import sha256
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Literal, cast
-
-import httpx
+from typing import TYPE_CHECKING, Literal, cast
 
 from nyc311.config import (
     COHORT_END,
@@ -20,13 +21,12 @@ from nyc311.config import (
     validate_window,
 )
 from nyc311.manifests import BronzeManifest, BronzePage
-from nyc311.source import (
+from nyc311.source_contract import (
     DATASET_ID,
     SELECTED_FIELDS,
     DayExtraction,
     ExtractionError,
     SourcePage,
-    extract_day,
     validate_page,
 )
 from nyc311.storage import (
@@ -38,6 +38,9 @@ from nyc311.storage import (
     write_bytes,
     write_json,
 )
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class BronzeError(RuntimeError):
@@ -153,8 +156,12 @@ def ingest_day(
     config: ExecutionConfig | None = None,
     *,
     previous_count: int | None = None,
+    on_progress: Callable[[BronzeManifest], None] | None = None,
+    absolute_deadline: float | None = None,
 ) -> BronzeManifest:
     """Persist observations as they arrive; every attempt uses a new run identifier."""
+    from nyc311.source import extract_day
+
     validate_window(day, COHORT_END)
     settings = execution_config(**(config or {}))
     if previous_count is not None and (
@@ -187,6 +194,8 @@ def ingest_day(
     if object_path(root, key).exists() or directory.exists():
         raise FileExistsError("Bronze attempt already exists; use a new run identifier")
     _write_manifest(root, key, manifest)
+    if on_progress is not None:
+        on_progress(manifest)
 
     def save_page(page: SourcePage) -> None:
         reference: BronzePage = {
@@ -201,6 +210,8 @@ def ingest_day(
         # Record the expected file before writing; failures remain explicitly incomplete.
         _write_manifest(root, key, manifest)
         write_bytes(root, reference["key"], gzip.compress(page["content"], mtime=0))
+        if on_progress is not None:
+            on_progress(manifest)
 
     def save_count(position: Literal["before", "after"], count: int) -> None:
         if position == "before":
@@ -208,6 +219,8 @@ def ingest_day(
         else:
             manifest["source_count_after"] = count
         _write_manifest(root, key, manifest)
+        if on_progress is not None:
+            on_progress(manifest)
 
     try:
         extract_day(
@@ -217,17 +230,26 @@ def ingest_day(
             previous_count=previous_count,
             on_page=save_page,
             on_count=save_count,
+            **(
+                {"absolute_deadline": absolute_deadline}
+                if absolute_deadline is not None
+                else {}
+            ),
         )
         _read_pages(root, manifest)
         manifest["status"] = "complete"
         _write_manifest(root, key, manifest)
+        if on_progress is not None:
+            on_progress(manifest)
     except Exception as error:
         manifest["status"] = "failed"
         # Exception messages can contain credentials or host paths; store only the type.
         manifest["error"] = type(error).__name__
         try:
             _write_manifest(root, key, manifest)
-        except OSError:
+            if on_progress is not None:
+                on_progress(manifest)
+        except Exception:
             pass
         raise
     return manifest

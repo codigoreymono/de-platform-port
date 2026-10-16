@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars (git-ignored) and fill in the real values before apply.
+
+aws_region  = "us-east-1"
+project     = "nyc311"
+bucket_name = "REPLACE-with-a-globally-unique-bucket-name"
+data_prefix = "nyc311"
+mode        = "published"
+
+glue_database_name   = "nyc311"
+athena_result_prefix = "athena-results"
+log_retention_days   = 14
+
+ingest_zip_key = "lambda-code/nyc311-ingest.zip"
+curate_zip_key = "lambda-code/nyc311-curate.zip"
+gold_zip_key   = "lambda-code/nyc311-gold.zip"
+
+# Base64 SHA-256 of each uploaded ZIP; leave empty to skip change detection:
+#   openssl dgst -sha256 -binary dist/nyc311-ingest.zip | base64
+ingest_source_hash = ""
+curate_source_hash = ""
+gold_source_hash   = ""
+
+tags = {
+  Owner = "REPLACE"
+}

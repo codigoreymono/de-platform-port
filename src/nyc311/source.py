@@ -5,53 +5,29 @@ import os
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from email.utils import parsedate_to_datetime
+from math import isfinite
 from random import uniform
 from time import monotonic, sleep
-from typing import Literal, TypedDict
+from typing import Literal
 
 import httpx
 
 from nyc311.config import COHORT_END, ExecutionConfig, execution_config, validate_window
-
-DATASET_ID = "erm2-nwe9"
-ENDPOINT = f"https://data.cityofnewyork.us/resource/{DATASET_ID}.json"
-SELECTED_FIELDS = (
-    "unique_key",
-    "created_date",
-    "closed_date",
-    "status",
-    "complaint_type",
-    "descriptor",
-    "agency",
-    "agency_name",
-    "borough",
-    "incident_zip",
-    "open_data_channel_type",
-    "resolution_action_updated_date",
-    ":updated_at",
+from nyc311.source_contract import (
+    DATASET_ID as DATASET_ID,
 )
+from nyc311.source_contract import (
+    ENDPOINT,
+    SELECTED_FIELDS,
+    DayExtraction,
+    ExtractionError,
+    SourcePage,
+)
+from nyc311.source_contract import (
+    validate_page as validate_page,
+)
+
 logger = logging.getLogger(__name__)
-
-
-class ExtractionError(RuntimeError):
-    """A source window could not be extracted safely."""
-
-
-class SourcePage(TypedDict):
-    content: bytes
-    row_count: int
-    observed_at_utc: str
-    last_cursor: str | None
-
-
-class DayExtraction(TypedDict):
-    start_date: str
-    end_date: str
-    pages: list[SourcePage]
-    record_count: int
-    source_count_before: int
-    source_count_after: int
-    complete: Literal[True]
 
 
 def create_client(
@@ -208,25 +184,6 @@ def _source_count(
     raise ExtractionError("Source count must be one nonnegative integer")
 
 
-def validate_page(
-    rows: object, page_size: int, cursor: str | None
-) -> tuple[int, str | None]:
-    """Validate the source pagination envelope for HTTP extraction and saved replay."""
-    if not isinstance(rows, list) or len(rows) > page_size:
-        raise ExtractionError("Source page must be an array within the page limit")
-    last_key = cursor
-    for row in rows:
-        if not isinstance(row, dict):
-            raise ExtractionError("Source page must contain objects")
-        key = row.get("unique_key")
-        if not isinstance(key, str) or not key.strip():
-            raise ExtractionError("Source cursor identifier must be nonempty text")
-        if last_key is not None and key <= last_key:
-            raise ExtractionError("Source cursor must advance in strict text order")
-        last_key = key
-    return len(rows), last_key
-
-
 def extract_day(
     client: httpx.Client,
     day: date,
@@ -235,6 +192,7 @@ def extract_day(
     previous_count: int | None = None,
     on_page: Callable[[SourcePage], None] | None = None,
     on_count: Callable[[Literal["before", "after"], int], None] | None = None,
+    absolute_deadline: float | None = None,
 ) -> DayExtraction:
     """Return original pages and optionally report observations as they arrive.
 
@@ -248,6 +206,10 @@ def extract_day(
     ):
         raise ValueError("Previous count must be a nonnegative integer")
     deadline = monotonic() + settings["task_deadline"]
+    if absolute_deadline is not None:
+        if not isfinite(absolute_deadline):
+            raise ValueError("Absolute extraction deadline must be finite")
+        deadline = min(deadline, absolute_deadline)
     where = (
         f"created_date >= '{day.isoformat()}T00:00:00' "
         f"AND created_date < '{end.isoformat()}T00:00:00'"

@@ -23,10 +23,10 @@ Manual CLI
           Gold: DuckDB SQL -> four Parquet products -> complete run manifest
 ```
 
-Local processing and offline tests are implemented. **Full-month extraction of
-real data (OpenSpec task 7.2) is pending operator authorization and execution.**
-AWS deployment is a later phase, not a prerequisite or a verified deployment.
-There are no automatic schedules, Spark, Airflow, Kafka, or continuous operations.
+Local processing, offline tests, and a full-month local run are implemented and
+verified. AWS infrastructure is defined under `infra/` but is **not deployed or
+verified**: a deployed run requires explicit operator authorization. There are no
+automatic schedules, Spark, Airflow, Kafka, or continuous operations.
 
 ## Local Setup
 
@@ -141,11 +141,27 @@ population-normalized rates, or annual seasonality claims.
 
 ## Operating And Reviewing
 
+- [Architecture](docs/architecture.md): local and AWS execution paths, storage
+  layout, catalog boundary, and operating limits.
+- [Data Dictionary](docs/data-dictionary.md): Silver and Gold fields, types,
+  control manifests, and lifecycle/quality semantics.
+- [Findings](docs/findings.md): the four analytical results for the full
+  September cohort with cohort and observation coverage.
+- [Test Evidence](docs/test-evidence.md): offline suite, packaging, compatibility,
+  benchmark and no-spill evidence; deployment evidence pending.
 - [Local Runbook](docs/local-runbook.md): storage layout, source contract,
   quality rules, authorized full-month command, verification, refresh, recovery.
 - [Analytics Guide](docs/analytics.md): metric definitions, DuckDB examples for
   all four products, expected fixture results, and interpretation limits.
 - [Fixture Inventory](data/samples/README.md): synthetic examples and channels.
+- [Lambda Handlers](docs/lambda-handlers.md): simulated S3 stages, metadata
+  composition, publication boundaries, and manual retry.
+- [Lambda Packaging](docs/lambda-packaging.md): offline locked-wheel ZIP builds,
+  per-stage inventories, cache prerequisites, and pending compatibility gates.
+- [Deployment Readiness](docs/deployment-readiness.md): compatibility gate,
+  measured resource budgets, and non-spill evidence.
+- [AWS Deployment Runbook](docs/deployment.md): manual Terraform deployment,
+  Step Functions execution, Athena queries, costs, rollback, and cleanup.
 
 The verified read APIs are `load_bronze`, `load_silver`, and `load_gold`. An
 existing JSON or Parquet file alone is not evidence of a complete publication.
@@ -155,14 +171,17 @@ never glob across different Gold run IDs because that double-counts snapshots.
 ## Repository Layout
 
 ```text
-src/nyc311/       CLI, coordinator, source, layers, storage, manifests
+src/nyc311/       CLI, coordinator, source, layers, storage, manifests, AWS adapters
 sql/             Four versioned DuckDB transformation queries
+infra/           Terraform: S3, three Lambdas, Step Functions, Glue, Athena
 data/samples/    Small synthetic fixtures tracked in Git
 data/local/      Ignored local outputs: sample/ and published/
 tests/           Offline unit, integrity, and end-to-end tests
-docs/            Operating instructions and analytical definitions
+docs/            Operating instructions, analytical and deployment documentation
 ```
 
-Existing AWS tooling and Boto3 do not authorize resource access. Future S3,
-Lambda, Step Functions, Glue Catalog, Athena, and Terraform work requires its
-own implementation, compatibility checks, and explicit deployment approval.
+Existing AWS tooling and Boto3 do not authorize resource access. The S3, Lambda,
+Step Functions, Glue Catalog, Athena, and Terraform definitions in this
+repository are not a deployment: every AWS plan, apply, read, or invocation
+requires explicit operator authorization, and no run is a verified deployment
+until it is authorized and observed.
