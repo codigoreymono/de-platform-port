@@ -21,7 +21,7 @@ openspec validate "build-nyc311-september-2026-pipeline" --strict
 |---|---|
 | `uv run --offline --frozen pytest` | **1,210 passed, 6 skipped, 34 subtests** |
 | `ruff check .` | Pass |
-| `ruff format --check .` | Pass (71 files) |
+| `ruff format --check .` | Pass (75 files) |
 | `openspec validate --strict` | Change valid |
 
 The suite covers source pagination/retry, Bronze/Silver quality and replacement,
@@ -84,6 +84,41 @@ terraform -chdir=infra validate
 
 All pass against AWS provider v5.100.0. These read no resource and do **not**
 authorize a plan, apply or invocation.
+
+## Reviewer Walkthrough (offline reproduction)
+
+Executed from the documented environment (Nix shell, Python via `uv run`, offline)
+against a fresh isolated `--base`, with no network and no AWS credentials. The
+commands are exactly those in the [README](../README.md) and the
+[Analytics Guide](analytics.md).
+
+| Step | Observed result |
+|---|---|
+| `python -m nyc311 sample --base <b> --run-id sample-docs-001 --page-size 3` | exit `0`, `status: succeeded`, `stage: finished`, `error: null`, `gold_manifest_key: control/gold/sample-docs-001.json` |
+| `python -m nyc311 replay --base <b> --mode sample --run-id sample-docs-replay-001 --bronze .../2026-09-01.json .../2026-09-02.json` | exit `0`, `status: succeeded`, `gold_manifest_key: control/gold/sample-docs-replay-001.json` |
+
+Read-API verification (`load_gold`) on both runs reproduced the documented fixture
+analytics exactly (see [Analytics Guide](analytics.md)):
+
+| Gold manifest | Coverage | demand | channel | eligible_closed | outstanding | unknown_status |
+|---|---|---:|---:|---:|---:|---:|
+| `control/gold/sample-docs-001.json` | sample | 12 | 12 | 5 | 2 | 1 |
+| `control/gold/sample-docs-replay-001.json` | sample | 12 | 12 | 5 | 2 | 1 |
+
+Exact successful publications, identified by their Gold manifest key:
+
+- Offline sample (reproducible by any reviewer): `data/local/sample/`,
+  `control/gold/sample-docs-001.json`.
+- Local real September month: `data/local/published/`,
+  `control/gold/september-2026-001.json` (323,627 accepted rows).
+- Authorized AWS month (deployed, verified, then destroyed):
+  `control/gold/september-2026-002.json`, Step Functions run
+  `september-2026-002`.
+
+The AWS recovery and cleanup instructions in the [deployment runbook](deployment.md)
+were reviewed and exercised: the bucket was emptied and `terraform destroy`
+completed (the Athena workgroup required `--recursive-delete`). No project resource
+remained afterwards.
 
 ## Deployment Evidence (authorized operator run)
 

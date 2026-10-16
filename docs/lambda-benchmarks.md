@@ -4,7 +4,8 @@
 
 The subsequent 8.6 candidate profiles and their native spill-safety blocker are
 recorded in [Deployment Readiness](deployment-readiness.md). The 8.5 baseline
-below is preserved unchanged; 8.6 remains pending review, not deployment-ready.
+below is preserved unchanged; 8.6 was later completed and the stack was deployed
+and verified (see [Test Evidence](test-evidence.md)).
 
 **Completed: 15 isolated, successful local trials.** There are five workload
 cases with three fresh processes/containers each. The change is at 32/46 tasks
@@ -281,7 +282,7 @@ The full offline regression suite passes **559 tests**, including 13 new
 benchmark-helper tests. Those host tests supplement, rather than replace, the
 actual pinned-image measurements. Ruff, format and strict OpenSpec checks pass.
 
-Task 8.6 and Terraform remain pending. AWS connectivity, actual Lambda startup,
-resource accounting and volume behavior, real SDK failure/retry paths, catalog
-publication and Athena verification still require their later tasks and explicit
-AWS authorization. Stop here to review these measurements before sizing.
+Task 8.6 and Terraform were subsequently completed, and an authorized deployment
+verified AWS connectivity, Lambda startup/resource accounting, catalog publication
+and Athena queries (see [Test Evidence](test-evidence.md)). These measurements
+remain the sizing baseline.

@@ -7,9 +7,11 @@ this completed the first 31/46 tasks. Native imports, handler execution,
 timezone/DST, Parquet, library resolution, size and fixture-resource observations
 passed in the authorized official image. No incompatibility or missing shared
 library was detected for these checks. The subsequent task 8.5 local volume
-baseline is documented in [Lambda Benchmarks](lambda-benchmarks.md). Task 8.6
-remains pending because of the later native spill-safety finding documented in
-[Deployment Readiness](deployment-readiness.md). Deployment is blocked.
+baseline is documented in [Lambda Benchmarks](lambda-benchmarks.md). The 8.6
+native spill-safety finding is documented in
+[Deployment Readiness](deployment-readiness.md); it was resolved by the fail-closed
+DuckDB limits, after which the stack was deployed and verified
+(see [Test Evidence](test-evidence.md)).
 
 The target is AWS Lambda Python 3.12 on Linux x86_64, using Amazon Linux 2023
 with glibc 2.34. The NixOS development interpreter and development libraries are
@@ -254,10 +256,10 @@ The only authorized download was the public official test image.
 
 The representative local task 8.5 baseline is now available in
 [Lambda Benchmarks](lambda-benchmarks.md), without definitive sizing changes.
-Still pending: production resource configuration/headroom (8.6); actual managed
-Lambda cold starts, CPU/memory/tmp behavior,
-public-source connectivity/throttling, IAM/S3 permissions and persistence, retries
-under AWS failures, Step Functions orchestration, catalog publication and Athena
-verification. These require their own later tasks and explicit AWS authorization.
-Local success does not grant that authorization. The current review boundary is
-the completed 8.5 baseline; do not proceed to 8.6 without approval.
+Later verified under explicit authorization: production resource configuration and
+headroom (8.6), managed Lambda cold starts, CPU/memory/tmp behavior, public-source
+connectivity, IAM/S3 permissions and persistence, retries under AWS failures, Step
+Functions orchestration, catalog publication and Athena verification (see
+[Test Evidence](test-evidence.md)). Local success never grants that authorization;
+it is required for every run. The review boundary is the completed baseline plus
+the authorized deployment record.

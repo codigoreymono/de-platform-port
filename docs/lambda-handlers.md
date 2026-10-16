@@ -2,9 +2,10 @@
 
 The S3 adapter and three entry points reuse the local Bronze, Silver, and Gold
 logic. Their default tests use a simulated SDK and HTTP transport, not AWS.
-These entry points do not constitute a deployed pipeline or authorize invocation
-against real S3 or the live source. ZIP assembly is described separately in
-[Lambda Packaging](lambda-packaging.md); the runtime/resource gates are pending.
+These entry points do not authorize invocation against real S3 or the live source.
+ZIP assembly is described separately in [Lambda Packaging](lambda-packaging.md);
+the runtime/resource gates were later completed and verified (see
+[Test Evidence](test-evidence.md)).
 
 ## Inputs And Composition
 
@@ -73,7 +74,9 @@ objects are replaced; there is no transaction across a prefix.
 - Gold retains run-scoped outputs and incremental diagnostics. All four uploaded
   product hashes must match before marking the artifact run complete. This is
   **not** Glue catalog publication or a global pipeline-success marker; those
-  orchestration/catalog tasks remain pending.
+  orchestration/catalog steps are provided by the Step Functions definition and the
+  Gold catalog publication, verified in the authorized deployment
+  (see [Test Evidence](test-evidence.md)).
 
 A retry of an already complete Bronze or Gold input run verifies its saved
 artifacts and returns the existing references. Bronze makes no new source call;

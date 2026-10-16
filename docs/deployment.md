@@ -313,6 +313,6 @@ AWS, requires explicit authorization:
       report; if a run fails, keep the manifests and prior Gold locations and
       recover manually instead of presenting the failure as a publication.
 
-After a successful authorized run, the deployment-evidence
-[test report](test-evidence.md) section can be filled in. Until then it stays
-explicitly pending.
+The authorized run was completed and the deployment-evidence
+[test report](test-evidence.md) section is filled in; the operator checklist above
+is satisfied, and the project resources were subsequently cleaned up.

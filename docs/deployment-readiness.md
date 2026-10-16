@@ -27,10 +27,11 @@ changed and no AWS resource was read or changed. Stage 9 now adds Terraform and
 catalog-publication definitions under `infra/` and `src/nyc311/catalog.py`; see
 the [deployment runbook](deployment.md).
 
-The remaining gap is **AWS-side verification only**: this report certifies local
-compatibility and budget checks against a pinned official runtime image, not
-deployed Lambda behavior. Terraform is defined and statically validated, but no
-AWS plan, apply or invocation has run.
+This report certifies local compatibility and budget checks against a pinned
+official runtime image. AWS-side verification was later performed in an authorized
+manual deployment (30-day Step Functions run, Glue/Athena verification,
+saved-Bronze replay) and is recorded in [Test Evidence](test-evidence.md); the
+stack was then cleaned up.
 
 | Check | Result |
 | --- | --- |
@@ -41,7 +42,7 @@ AWS plan, apply or invocation has run.
 | Memory/time and observed temporary headroom | Pass; 20% target met with sampling caveats |
 | Effective limits on all Gold connections | Three keys read back correctly, no rewrite |
 | Reliable fail-closed no-spill enforcement | Pass, production-policy traces |
-| AWS account, deployment and actual service verification | Not accessed/not authorized by this task |
+| AWS account, deployment and actual service verification | Verified in the authorized deployment (see [Test Evidence](test-evidence.md)) |
 | Overall 8.6 local readiness gate | **Passed** |
 
 ## Selected Profiles
@@ -257,18 +258,18 @@ GB-seconds** for Ingest/Curate/Gold, before rounding and any service pricing.
 One manual pass with 30 Ingest, 30 Curate and one Gold invocation would have an
 arithmetic ceiling of **42,300 GB-seconds** at those timeouts, excluding outer
 retries. This is not a forecast: local durations are not AWS-billed durations.
-No account, regional pricing, free-tier assumption or USD cost was queried.
-S3 requests/storage, logs, orchestration, Glue and Athena budgets still need
-later explicitly authorized deployment planning and operating controls.
+The authorized deployment observed real durations, memory and temporary usage; the
+idle stack was later destroyed, so standing cost is zero. S3 requests/storage,
+logs, orchestration, Glue and Athena budgets are governed by the operator's account
+budget and the cleanup step in the [deployment runbook](deployment.md).
 
-Actual Lambda memory/tmp accounting, source connectivity/mutation, SDK streaming
-and retries, IAM/S3 behavior, cold starts, managed-runtime updates, CPU features,
-interrupted-invocation residues, Glue publication and Athena consumption remain
-unverified in AWS. The fail-closed no-spill policy means a genuine memory shortfall
-fails the run rather than degrading; the 512-MiB engine buffer plus the observed
-75%+ process-memory headroom make this acceptable locally, but the real AWS memory
-accounting has not been observed. Stage 9 definitions exist, but no AWS plan,
-apply or invocation has been performed; all AWS operations remain out of scope.
+The authorized deployment verified actual Lambda memory/tmp accounting, source
+connectivity, SDK streaming and retries, IAM/S3 behavior, cold starts, Glue
+publication and Athena consumption (see [Test Evidence](test-evidence.md)). Observed
+memory stayed far below the configured ceilings (Ingest 123/512 MiB, Curate
+333/1024 MiB, Gold 580/2048 MiB). The fail-closed no-spill policy means a genuine
+memory shortfall fails the run rather than degrading. Every new AWS plan, apply or
+invocation still requires explicit operator authorization.
 
 ## Reproduction And Evidence
 

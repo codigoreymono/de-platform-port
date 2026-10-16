@@ -24,9 +24,12 @@ Manual CLI
 ```
 
 Local processing, offline tests, and a full-month local run are implemented and
-verified. AWS infrastructure is defined under `infra/` but is **not deployed or
-verified**: a deployed run requires explicit operator authorization. There are no
-automatic schedules, Spark, Airflow, Kafka, or continuous operations.
+verified. The AWS infrastructure under `infra/` was **manually deployed and verified
+end to end** under explicit operator authorization (30-day Step Functions run,
+Glue/Athena verification, saved-Bronze replay), then **cleaned up** so it incurs no
+standing cost; see [Test Evidence](docs/test-evidence.md). A new deployment again
+requires explicit operator authorization. There are no automatic schedules, Spark,
+Airflow, Kafka, or continuous operations.
 
 ## Local Setup
 
@@ -148,7 +151,7 @@ population-normalized rates, or annual seasonality claims.
 - [Findings](docs/findings.md): the four analytical results for the full
   September cohort with cohort and observation coverage.
 - [Test Evidence](docs/test-evidence.md): offline suite, packaging, compatibility,
-  benchmark and no-spill evidence; deployment evidence pending.
+  benchmark, no-spill, reviewer walkthrough, and authorized deployment evidence.
 - [Local Runbook](docs/local-runbook.md): storage layout, source contract,
   quality rules, authorized full-month command, verification, refresh, recovery.
 - [Analytics Guide](docs/analytics.md): metric definitions, DuckDB examples for
@@ -157,7 +160,7 @@ population-normalized rates, or annual seasonality claims.
 - [Lambda Handlers](docs/lambda-handlers.md): simulated S3 stages, metadata
   composition, publication boundaries, and manual retry.
 - [Lambda Packaging](docs/lambda-packaging.md): offline locked-wheel ZIP builds,
-  per-stage inventories, cache prerequisites, and pending compatibility gates.
+  per-stage inventories, cache prerequisites, and compatibility gates.
 - [Deployment Readiness](docs/deployment-readiness.md): compatibility gate,
   measured resource budgets, and non-spill evidence.
 - [AWS Deployment Runbook](docs/deployment.md): manual Terraform deployment,
