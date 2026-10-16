@@ -21,6 +21,13 @@ data "aws_iam_policy_document" "data" {
     actions   = ["s3:GetObject", "s3:PutObject"]
     resources = ["${aws_s3_bucket.data.arn}/${local.mode_namespace}/*"]
   }
+
+  # Without s3:ListBucket, HeadObject on a missing key returns 403 instead of
+  # 404, which breaks the idempotency checks in s3_store.exists.
+  statement {
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.data.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "data" {
